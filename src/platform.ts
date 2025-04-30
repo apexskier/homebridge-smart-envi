@@ -15,6 +15,16 @@ import {
 } from "./platformAccessory";
 import { Config } from "./config";
 
+function sanitizeName(str: string): string {
+  // Regular expression to match only alphanumeric, space, and apostrophe characters
+  const regex = /[^a-zA-Z0-9 ']/g;
+
+  // Replace any characters that don't match the pattern with an empty string
+  const sanitized = str.replace(regex, "");
+
+  return sanitized;
+}
+
 /**
  * HomebridgePlatform
  * This class is the main constructor for your plugin, this is where you should
@@ -93,19 +103,19 @@ export class SmartEnviHomebridgePlatform implements DynamicPlatformPlugin {
     };
 
     for (const device of devices) {
-      const deviceEndpoint = device.serial_no;
+      const serial = device.serial_no;
       const existingAccessory = this.accessories.find(
-        (accessory) =>
-          accessory.UUID === this.api.hap.uuid.generate(deviceEndpoint),
+        (accessory) => accessory.UUID === this.api.hap.uuid.generate(serial),
       );
+      const name = sanitizeName(device.name);
       if (existingAccessory) {
-        this.log.info("Restoring existing accessory from cache:", device.name);
+        this.log.info("Restoring existing accessory from cache:", name);
         new SmartEnviPlatformAccessory(this, existingAccessory);
       } else {
-        this.log.info("Adding new accessory:", device.name);
+        this.log.info("Adding new accessory:", name);
         const accessory = new this.api.platformAccessory<AccessoryContext>(
-          device.name,
-          this.api.hap.uuid.generate(deviceEndpoint),
+          name,
+          this.api.hap.uuid.generate(serial),
         );
         (accessory.context as AccessoryContext).device = device;
         new SmartEnviPlatformAccessory(this, accessory);

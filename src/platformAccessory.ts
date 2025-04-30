@@ -38,7 +38,7 @@ interface OnlineDeviceData {
   // value here is F if `temperature_unit` is F, C if C
   current_temperature: number;
   ambient_temperature: number;
-  device_status: 1; // 0 offline, 1 online ?
+  device_status: 0 | 1; // 0 offline, 1 online ?
   state: 1 | 0; // 0 off, 1 on ?
   // TODO: figure out what these are doing - is this a difference between current and target heating state?
   current_mode: 1; // ?
@@ -53,14 +53,10 @@ interface OnlineDeviceData {
   night_light_setting: NightLightData;
 }
 
-type DeviceData = OnlineDeviceData | { device_status: 0 };
-
-function isDeviceOffline(data: DeviceData): data is { device_status: 0 } {
-  return data.device_status === 0;
-}
+type DeviceData = OnlineDeviceData | null;
 
 export class SmartEnviPlatformAccessory {
-  data: DeviceData = { device_status: 0 };
+  data: DeviceData = null;
 
   constructor(
     private readonly platform: SmartEnviHomebridgePlatform,
@@ -290,11 +286,18 @@ export class SmartEnviPlatformAccessory {
   }
 
   private guardedOnlineData(): OnlineDeviceData {
-    if (isDeviceOffline(this.data)) {
+    if (this.data === null) {
+      this.platform.log.debug("device hasn't loaded yet");
       throw new this.platform.api.hap.HapStatusError(
-        this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE,
+        this.platform.api.hap.HAPStatus.RESOURCE_BUSY,
       );
     }
+    // if (this.data.device_status === 0) {
+    //   this.platform.log.debug("device offline", this.data);
+    //   throw new this.platform.api.hap.HapStatusError(
+    //     this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE
+    //   );
+    // }
     return this.data;
   }
 
