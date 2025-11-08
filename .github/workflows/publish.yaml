@@ -26,6 +26,4 @@ jobs:
       - name: Verify version matches tag
         run: test "$(npm pkg get version)" = "\"${GITHUB_REF#refs/tags/v}\""
       - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test
-      - run: npm publish
+      - run: npm publish # this runs prepare
